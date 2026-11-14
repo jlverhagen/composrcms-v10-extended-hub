@@ -1,6 +1,6 @@
 # ComposrCMS v10 Extended Hub (Unofficial)
 
-Proposed repository: `jlverhagen/composr-v10-extended-hub`.
+Repository: `jlverhagen/composrcms-v10-extended-hub`.
 
 Deploy a minimal ComposrCMS v10 site for human-readable downloads and documentation. Serve versioned catalogue JSON and addon packages as static files. `publisher/build_catalogue.py` is an offline **unsigned** prototype; it is not a production release pipeline.
 
