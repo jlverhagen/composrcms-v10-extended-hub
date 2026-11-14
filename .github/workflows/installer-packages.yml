@@ -1,0 +1,57 @@
+name: Composr v10 installer packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      core_commit:
+        description: Full SHA of the reviewed Core commit
+        required: true
+      version:
+        description: Extended release label
+        required: true
+      publish:
+        description: Create a draft GitHub release on Core
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate inputs
+        env:
+          CORE_COMMIT: ${{ inputs.core_commit }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          [[ "$CORE_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$VERSION" =~ ^10\.[0-9]+\.[0-9]+([.-][a-zA-Z0-9]+)*$ ]]
+      - uses: actions/checkout@v4
+        with:
+          repository: jlverhagen/composrcms-v10-extended
+          ref: ${{ inputs.core_commit }}
+          token: ${{ secrets.COMPOSR_CORE_READ_TOKEN }}
+          path: core
+          persist-credentials: false
+      - name: Build and verify installers
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          python3 hub/publisher/build_composr_installers.py --source-dir core --output-dir release --version "$VERSION"
+          (cd release && sha256sum -c SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: composr-installers
+          path: release/
+      - name: Create draft release on Core
+        if: inputs.publish
+        env:
+          GH_TOKEN: ${{ secrets.COMPOSR_CORE_RELEASE_TOKEN }}
+          CORE_COMMIT: ${{ inputs.core_commit }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh release create "$VERSION" release/* --repo jlverhagen/composrcms-v10-extended \
+            --target "$CORE_COMMIT" --title "ComposrCMS v$VERSION" --draft
