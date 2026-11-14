@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "source_id": "extended-hub",
+  "addons": [
+    {
+      "id": "example",
+      "name": "Example addon (fixture only)",
+      "version": "1.0.0",
+      "download_url": "https://cms.tfo.net/downloads/example.tar",
+      "license": "MIT",
+      "cms_compatibility": {
+        "major": 10,
+        "minimum": "10.0.52"
+      },
+      "php_compatibility": {
+        "minimum": "8.2"
+      },
+      "package_file": "example.tar",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "issued_at": 1790000000,
+  "expires_at": 1792000000
+}

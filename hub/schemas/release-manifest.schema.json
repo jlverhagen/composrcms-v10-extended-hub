@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "distribution_id",
+    "releases"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "distribution_id": {
+      "const": "composrcms-v10-extended"
+    },
+    "releases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "version",
+          "upstream_base",
+          "upstream_commit",
+          "download_url",
+          "sha256"
+        ],
+        "properties": {
+          "version": {
+            "type": "string",
+            "pattern": "^10\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)-ext\\.(?:0|[1-9][0-9]*)(?:-[a-z0-9]+(?:[.-][a-z0-9]+)*)?$"
+          },
+          "upstream_base": {
+            "type": "string",
+            "pattern": "^10\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$"
+          },
+          "download_url": {
+            "type": "string",
+            "pattern": "^https://"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "upstream_commit": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{40}$"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

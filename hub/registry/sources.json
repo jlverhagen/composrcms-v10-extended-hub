@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "registry_id": "composrcms-v10-extended",
+  "sources": [
+    {
+      "id": "extended-hub",
+      "name": "ComposrCMS v10 Extended Hub",
+      "manifest_url": "https://cms.tfo.net/api/v1/addons.json",
+      "enabled": true,
+      "priority": 100,
+      "trust_level": "maintainer",
+      "signing_key_ids": [
+        "PLACEHOLDER-NOT-TRUSTED"
+      ]
+    },
+    {
+      "id": "example-community",
+      "name": "Example Community Source (disabled fixture)",
+      "manifest_url": "https://example.org/composr/addons.json",
+      "enabled": false,
+      "priority": 50,
+      "trust_level": "third-party",
+      "signing_key_ids": []
+    }
+  ],
+  "sequence": 1,
+  "issued_at": 0,
+  "expires_at": 86400
+}

@@ -1,0 +1,23 @@
+{
+  "addons": [
+    {
+      "cms_compatibility": {
+        "major": 10,
+        "minimum": "10.0.52"
+      },
+      "download_url": "https://example.test/downloads/example.tar",
+      "id": "example",
+      "license": "MIT",
+      "name": "Example addon (changed after signing)",
+      "php_compatibility": {
+        "minimum": "8.2"
+      },
+      "sha256": "7deb01615f2d44deebe894b2359930e0ec3814073a83e0c56864448a5298f4cd",
+      "version": "1.0.0"
+    }
+  ],
+  "expires_at": 1800000060,
+  "issued_at": 1799999940,
+  "schema_version": 1,
+  "source_id": "extended-hub"
+}
