@@ -10,14 +10,15 @@ from urllib.parse import urlsplit
 
 DISTRIBUTION_ID = 'composrcms-v10-extended'
 UPSTREAM_BASE_PATTERN = r'10\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)'
-EXTENDED_VERSION_PATTERN = (
+CALENDAR_VERSION_PATTERN = r'[1-9][0-9]{3}\.(?:0[1-9]|1[0-2])\.[1-9][0-9]*(?:-(?:alpha|beta|rc)\.[1-9][0-9]*)?'
+LEGACY_VERSION_PATTERN = (
     UPSTREAM_BASE_PATTERN + r'-ext\.(?:0|[1-9][0-9]*)(?:-[a-z0-9]+(?:[.-][a-z0-9]+)*)?'
 )
 
 
 def validate_version(version):
-    if not re.fullmatch(EXTENDED_VERSION_PATTERN, version):
-        raise ValueError('expected a v10 Extended version such as 10.0.52-ext.1 or 10.0.52-ext.1-alpha.1')
+    if not (re.fullmatch(CALENDAR_VERSION_PATTERN, version) or re.fullmatch(LEGACY_VERSION_PATTERN, version)):
+        raise ValueError('expected an Extended release version such as 2026.11.1-alpha.1')
 
 
 def sha256_file(path):
@@ -27,7 +28,7 @@ def sha256_file(path):
 
 def validate_release_metadata(version, upstream_base, upstream_commit, download_url):
     validate_version(version)
-    if not re.fullmatch(UPSTREAM_BASE_PATTERN, upstream_base) or not version.startswith(upstream_base + '-ext.'):
+    if upstream_base != '10.0.52' or (re.fullmatch(LEGACY_VERSION_PATTERN, version) and not version.startswith(upstream_base + '-ext.')):
         raise ValueError('upstream baseline must match the Extended version')
     if not re.fullmatch(r'[0-9a-f]{40}', upstream_commit):
         raise ValueError('upstream commit must be a full lowercase Git SHA-1')

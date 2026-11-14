@@ -15,6 +15,8 @@ import tempfile
 import zipfile
 import zlib
 
+from build_release_manifest import CALENDAR_VERSION_PATTERN
+
 
 def php(code, *args, data=None):
     return subprocess.check_output(["php", "-r", code, "--", *args], input=data)
@@ -29,7 +31,7 @@ def inventory(source):
 
 
 def quick_installer(files, data_path, stock_installer):
-    with tarfile.open(data_path, "w", format=tarfile.GNU_FORMAT) as archive:
+    with tarfile.open(data_path, "w", format=tarfile.USTAR_FORMAT) as archive:
         write_tar(archive, files)
     with tarfile.open(data_path) as archive:
         locations = {item.name: [item.offset_data, item.size] for item in archive}
@@ -97,17 +99,18 @@ def write_zip(path, files):
 
 
 def build(source, output, version):
-    if not re.fullmatch(r"10\.\d+\.\d+(?:[-.][a-zA-Z0-9]+)*", version):
-        raise ValueError("Expected a Composr v10 release label")
+    if not re.fullmatch(CALENDAR_VERSION_PATTERN, version):
+        raise ValueError("Expected a calendar release such as 2026.11.1-alpha.1")
     if output.exists() or output.is_relative_to(source):
         raise ValueError("Use a new output directory outside the checkout")
 
     files = {}
-    for name in inventory(source) + [
+    extended_files = [
         "adminzone/pages/modules_custom/admin_extended_addons.php",
         "themes/default/templates_custom/EXTENDED_ADDON_INSTALL_CANCEL.tpl",
         "sources_custom/hooks/systems/page_groupings/extended_addons.php",
-    ] + [path.relative_to(source).as_posix() for path in sorted((source / "sources_custom").glob("extended_*.php"))]:
+    ] + [path.relative_to(source).as_posix() for path in sorted((source / "sources_custom").glob("extended_*.php"))]
+    for name in inventory(source) + extended_files:
         path = PurePosixPath(name)
         if not path.parts or path.is_absolute() or ".." in path.parts or "\\" in name or str(path) != name:
             raise ValueError(f"Invalid inventory path: {name}")
@@ -117,6 +120,22 @@ def build(source, output, version):
         if member.resolve() != member or not member.is_file():
             raise ValueError(f"Missing or linked release file: {name}")
         files[name] = member.read_bytes()
+
+    # The stock upgrader copies files listed by installed addon registry hooks.
+    core_registry = "sources/hooks/systems/addon_registry/core.php"
+    start = b"public function get_file_list()\n    {\n        return array(\n"
+    registry = files[core_registry]
+    if registry.count(start) != 1:
+        raise ValueError("Cannot locate the core addon file inventory")
+    owned = b"".join(f"            '{name}',\n".encode("ascii") for name in extended_files
+                     if f"'{name}'".encode("ascii") not in registry)
+    files[core_registry] = registry.replace(start, start + owned)
+
+    version_path = "sources_custom/extended_version.php"
+    declaration = rb"(function extended_distribution_version\(\)\s*\{\s*return ')[^']+(';)"
+    files[version_path], count = re.subn(declaration, rb"\g<1>" + version.encode() + rb"\2", files[version_path])
+    if count != 1:
+        raise ValueError("Cannot stamp the installed Extended release version")
 
     files["themes/map.ini"] = b"default=default\n"
     files["data_custom/functions.bin"] = b""
@@ -146,11 +165,11 @@ def build(source, output, version):
         write_zip(result / f"composr_manualextraction_installer-{version}.zip", manual)
         with (result / f"composr-{version}.tar.gz").open("wb") as target:
             with gzip.GzipFile(filename="", fileobj=target, mode="wb", mtime=0) as compressed:
-                with tarfile.open(fileobj=compressed, mode="w|", format=tarfile.GNU_FORMAT) as archive:
+                with tarfile.open(fileobj=compressed, mode="w|", format=tarfile.USTAR_FORMAT) as archive:
                     write_tar(archive, {**manual, "readme.txt": readme,
                                         "install.sql": (source / "install.sql").read_bytes(),
                                         "_config.php.template": (source / "_config.php.template").read_bytes()})
-        with tarfile.open(result / f"composr_upgrader-{version}.cms", "w", format=tarfile.GNU_FORMAT) as archive:
+        with tarfile.open(result / f"composr_upgrader-{version}.cms", "w", format=tarfile.USTAR_FORMAT) as archive:
             write_tar(archive, files)
         sums = []
         for path in sorted(result.iterdir()):

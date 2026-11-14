@@ -19,12 +19,13 @@ helper code and its template.
 ```sh
 python3 hub/publisher/build_composr_installers.py \
   --source-dir /path/to/core --output-dir /path/to/new-release-directory \
-  --version 10.0.52-ext.1-alpha.1
+  --version 2026.11.1-alpha.1
 ```
 
 The output contains the stock-style quick ZIP, manual extraction ZIP, bundled
-TAR.GZ, full upgrader CMS TAR, and SHA256SUMS. The version argument labels the
-artifacts. It does not change Composr's database version. Review the output and
+TAR.GZ, full upgrader CMS TAR, and SHA256SUMS. The version argument labels the artifacts and stamps the installed Extended
+version. The stock CMS compatibility and database version remain at 10.0.52.
+Use YYYY.MM.N with an optional -alpha.N, -beta.N, or -rc.N suffix. Review the output and
 exercise installation and upgrades before publication. On cms.tfo.net, build
 outside the document root and publish the verified files to the mirror's release
 download directory. Keep the build invocation outside the web process.
