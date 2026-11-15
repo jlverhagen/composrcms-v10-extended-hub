@@ -16,6 +16,7 @@ import zipfile
 import zlib
 
 from build_release_manifest import CALENDAR_VERSION_PATTERN
+from catalogue_enforcement import GUARDED_FILES, render_checksums
 
 
 def php(code, *args, data=None):
@@ -171,6 +172,10 @@ def build(source, output, version):
                                         "_config.php.template": (source / "_config.php.template").read_bytes()})
         with tarfile.open(result / f"composr_upgrader-{version}.cms", "w", format=tarfile.USTAR_FORMAT) as archive:
             write_tar(archive, files)
+        (result / f"catalogue-enforcement-{version}.sha256").write_text(
+            render_checksums({name: hashlib.sha256(files[name]).hexdigest() for name in GUARDED_FILES}),
+            encoding="ascii",
+        )
         sums = []
         for path in sorted(result.iterdir()):
             with path.open("rb") as stream:
