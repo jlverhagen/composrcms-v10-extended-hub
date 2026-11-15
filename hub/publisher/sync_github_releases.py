@@ -7,6 +7,7 @@ import html
 import json
 from pathlib import Path
 import re
+import sys
 import tempfile
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
@@ -155,15 +156,22 @@ def sync(root):
         if not isinstance(releases, list):
             raise ValueError("Invalid GitHub release listing")
         versions = []
+        failed = []
         for release in releases:
             version = release["tag_name"].removeprefix("v")
             if release["draft"] or not VERSION.fullmatch(version) or version in versions:
                 continue
-            if sync_release(root, release):
-                versions.append(version)
+            try:
+                if sync_release(root, release):
+                    versions.append(version)
+            except (OSError, ValueError, KeyError) as error:
+                failed.append(version)
+                print(f"Could not mirror {version}: {error}", file=sys.stderr, flush=True)
         if not versions:
             raise ValueError("No complete GitHub releases found")
         write_index(root, versions)
+        if failed:
+            raise SystemExit(f"Release sync failed for: {', '.join(failed)}")
 
 
 if __name__ == "__main__":
