@@ -1,0 +1,93 @@
+name: Composr addon packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      core_commit:
+        description: Full SHA of the reviewed Core commit
+        required: true
+      tag:
+        description: Hub tag such as addons-2026.11.1-alpha.1
+        required: true
+      addon_ids:
+        description: Space-separated non-bundled addon IDs
+        required: true
+        default: geshi better_mail
+      draft_release:
+        description: Upload to a new draft Hub release
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate build inputs
+        env:
+          CORE_COMMIT: ${{ inputs.core_commit }}
+          TAG: ${{ inputs.tag }}
+          ADDON_IDS: ${{ inputs.addon_ids }}
+        run: |
+          [[ "$CORE_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$TAG" =~ ^addons-[1-9][0-9]{3}\.(0[1-9]|1[0-2])\.[1-9][0-9]*(-(alpha|beta|rc)\.[1-9][0-9]*)?$ ]]
+          [[ "$ADDON_IDS" =~ ^[a-zA-Z0-9_]+(\ [a-zA-Z0-9_]+)*$ ]]
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: jlverhagen/composrcms-v10-extended
+          ref: ${{ inputs.core_commit }}
+          path: core
+          persist-credentials: false
+      - name: Build and verify TARs
+        env:
+          ADDON_IDS: ${{ inputs.addon_ids }}
+        run: |
+          python3 -m venv .publisher-venv
+          .publisher-venv/bin/python -m pip install 'jsonschema>=4,<5'
+          mkdir packages
+          read -r -a ids <<< "$ADDON_IDS"
+          php hub/publisher/build_addon_tars.php core packages "${ids[@]}"
+          PYTHONPATH=hub/publisher .publisher-venv/bin/python - <<'PY'
+          from pathlib import Path
+          import re
+
+          from build_catalogue import inspect_tar
+
+          for path in sorted(Path("packages").glob("*.tar")):
+              addon_id = path.stem.rsplit("-", 1)[0]
+              if re.findall(r'^name="([^"]+)"$', inspect_tar(path), re.M) != [addon_id]:
+                  raise ValueError(f"Wrong addon identity in {path}")
+          PY
+          (cd packages && sha256sum -- *.tar > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: composr-addon-tars
+          path: packages/
+          if-no-files-found: error
+
+  draft:
+    if: inputs.draft_release && github.ref_name == github.event.repository.default_branch
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: composr-addon-tars
+          path: packages
+      - name: Create draft Hub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          CORE_COMMIT: ${{ inputs.core_commit }}
+        run: |
+          (cd packages && sha256sum -c SHA256SUMS)
+          gh release create "$TAG" packages/* --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" --title "Composr addons $TAG" --draft \
+            --notes "Addon TARs built from Core commit $CORE_COMMIT."
