@@ -1,0 +1,23 @@
+{
+  "addons": [
+    {
+      "cms_compatibility": {
+        "major": 10,
+        "minimum": "10.0.52"
+      },
+      "download_url": "https://raw.githubusercontent.com/jlverhagen/composrcms-v10-extended-hub/github-addon-fixture/github-addon-fixture/fixture.tar",
+      "id": "mirror_download_fixture",
+      "license": "MIT",
+      "name": "GitHub download fixture (test only)",
+      "php_compatibility": {
+        "minimum": "8.2"
+      },
+      "sha256": "0fecd02023c7d2da9d866cbe245770441ec7912b8dfed1be80e339b85448571b",
+      "version": "1.0.0"
+    }
+  ],
+  "expires_at": 1795322039,
+  "issued_at": 1794717239,
+  "schema_version": 1,
+  "source_id": "github-addon-fixture"
+}
