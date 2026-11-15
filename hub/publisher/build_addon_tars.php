@@ -63,9 +63,8 @@ function require_package_file($path)
     if (realpath($full) !== $full || !is_file($full) || !is_readable($full)) {
         throw new RuntimeException("Missing or unsupported source file: $path");
     }
-    // The legacy writer uses GNU LongLink records above this limit. The signed catalogue
-    // validator accepts regular entries and directories only.
-    if (strlen($path) > 100) {
+    // The signed catalogue accepts standard USTAR paths, without GNU LongLink records.
+    if (strlen($path) > 100 && (!function_exists('tar_split_ustar_path') || tar_split_ustar_path($path) === null)) {
         throw new RuntimeException("Path exceeds the catalogue-compatible TAR limit: $path");
     }
 }
