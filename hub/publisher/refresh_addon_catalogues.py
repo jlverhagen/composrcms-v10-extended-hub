@@ -77,10 +77,15 @@ def renew_source(source_id, source, settings, enabled, approved, stage, force):
     ], check=True)
     manifest = renewed / 'catalogue.json'
     signature = renewed / 'catalogue.sig.json'
+    asset_bases = source.get('asset_bases', [source['asset_base']])
+    if not isinstance(asset_bases, list) or not asset_bases or any(
+        not isinstance(base, str) or not base.startswith('https://') for base in asset_bases
+    ):
+        raise ValueError('invalid addon asset bases')
     for addon in current['addons']:
         url = addon['download_url']
         filename = Path(urlsplit(url).path).name
-        if url != f"{source['asset_base'].rstrip('/')}/{filename}" or not filename.endswith('.tar'):
+        if url not in {f"{base.rstrip('/')}/{filename}" for base in asset_bases} or not filename.endswith('.tar'):
             raise ValueError('unexpected addon asset URL')
         if hashlib.sha256(get_url(url, 52428800)).hexdigest() != addon['sha256']:
             raise ValueError(f"remote TAR checksum mismatch for {addon['id']}")
