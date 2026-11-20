@@ -22,6 +22,15 @@ if ($argc < 3 || $source === false || !is_file($source . '/sources/addons2.php')
 
 const HHVM = false;
 const GOOGLE_APPENGINE = true;
+// Retained upstream source is not a maintained/publishable Extended addon.
+$excluded_addons = array('composr_homesite_support_credits');
+$requested_ids = array_slice($argv, 3);
+foreach ($requested_ids as $id) {
+    if (in_array($id, $excluded_addons, true)) {
+        fwrite(STDERR, "Addon excluded by Extended maintenance policy: $id\n");
+        exit(2);
+    }
+}
 function running_script($name) { return false; }
 $GLOBALS['DEV_MODE'] = false;
 $GLOBALS['SITE_INFO'] = array('prefer_direct_code_call' => '1');
@@ -74,9 +83,10 @@ foreach (array('global3', 'zones', 'version', 'version2', 'addons', 'addons2', '
 }
 
 $registry = $source . '/sources_custom/hooks/systems/addon_registry/';
-$ids = array_slice($argv, 3);
+$ids = $requested_ids;
 if ($ids === array()) {
     $ids = array_map(static fn ($path) => basename($path, '.php'), glob($registry . '*.php'));
+    $ids = array_values(array_diff($ids, $excluded_addons));
 }
 if ($ids === array()) {
     fwrite(STDERR, "No non-bundled addon registry hooks found.\n");
