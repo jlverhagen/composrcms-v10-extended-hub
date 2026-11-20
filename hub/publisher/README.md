@@ -21,3 +21,15 @@ Review package provenance and licensing before publication. For verified catalog
 `build_release_package.py` creates a repeatable TAR.GZ from a staged core tree and writes an inventory and checksum list. `build_release_manifest.py` generates unsigned core metadata using the archive's SHA-256, the Extended version, the upstream release and exact baseline commit, and the intended HTTPS URL. See the [offline release workflow](../../cms/docs/extended/release-process.md#offline-prototype) for commands and key handling.
 
 `check_release_staging.py` reports the staged tree and flags common accidental inclusions. `verify_release.py` checks the signed manifest, archive digest, and packaged files against the inventory using a pinned core public key.
+
+
+## Verify Composr installer formats
+
+After building a trusted local bundle with `build_composr_installers.py`, run:
+
+```sh
+python3 hub/publisher/verify_composr_packages.py --package-dir /path/to/bundle --version "$version" --php /path/to/php
+python3 hub/tests/test_composr_packages.py
+```
+
+The verifier checks the four archive payloads against each other, quick installer index offsets and stock installer bytes, regenerated integrity CRCs, enforcement checksums, version stamp, excluded paths and SHA256SUMS. It executes the generated quick-index PHP declaration; use only reviewed local builds. A successful result establishes archive consistency, not installation, upgrade or CMS workflow acceptance. The regression tests build small real packages and reject digest corruption, rehashed payload changes and excluded members. The builder/test runner uses `php` on PATH.
