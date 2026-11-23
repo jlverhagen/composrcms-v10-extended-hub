@@ -27,7 +27,12 @@ class TransportTests(unittest.TestCase):
             p=run('echo extended_transport_is_public_ip(' + json.dumps(ip) + ') ? "yes" : "no";')
             self.assertEqual(p.stdout,'yes',ip)
     def test_no_network_for_localhost(self):
+        available = run('echo extension_loaded("curl") ? "yes" : "no";')
+        self.assertEqual(available.returncode, 0, available.stdout + available.stderr)
+        if available.stdout != 'yes':
+            self.skipTest('PHP cURL extension required to exercise transport URL validation')
         p=run('extended_transport_fetch("https://localhost/file", sys_get_temp_dir());')
         self.assertNotEqual(p.returncode,0)
+        self.assertIn('Invalid public DNS hostname', p.stdout + p.stderr)
 
 if __name__ == '__main__': unittest.main()

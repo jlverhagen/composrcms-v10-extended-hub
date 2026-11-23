@@ -37,7 +37,8 @@ function read_addon_info($id, ...$args) {
       'licence'=>'fixture', 'description'=>'fixture');
 }
 function create_addon($filename, $files, $name, $incompat, $deps, $author, $org,
-  $version, $category, $copyright, $licence, $description, $stage, $unused, $source) {
+  $version, $category, $copyright, $licence, $description, $stage, $unused, $source, $metadata_mtime) {
+    if ($metadata_mtime !== 0) throw new RuntimeException('Metadata timestamp was not fixed');
     file_put_contents(get_custom_file_base().'/'.$stage.'/'.$filename, 'fixture');
 }
 ''')
@@ -73,6 +74,15 @@ function create_addon($filename, $files, $name, $incompat, $deps, $author, $org,
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stderr, '')
         self.assertTrue((self.output / 'fixture-10.x.tar').is_file())
+
+    def test_old_core_without_metadata_timestamp_is_rejected(self):
+        path = self.source / 'sources/addons2.php'
+        content = path.read_text().replace(', $source, $metadata_mtime)', ', $source)')
+        path.write_text(content)
+        result = self.run_builder('fixture')
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('lacks generated metadata timestamp support', result.stderr)
+        self.assertFalse((self.output / 'fixture-10.x.tar').exists())
 
 
 if __name__ == '__main__':

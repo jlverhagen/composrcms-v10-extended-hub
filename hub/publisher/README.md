@@ -16,6 +16,8 @@ python3 hub/publisher/sign_manifest.py \
 
 Review package provenance and licensing before publication. For verified catalogues passed to the offline merger, source identity and priority come from the registry. Unspecified registry priority is zero. See [component tests](../tests/README.md).
 
+The offline addon TAR builder requires a core checkout whose `create_addon` supports a generated metadata timestamp. It fixes the generated `addon.inf` timestamp to zero; normal CMS exports retain their existing current-time behavior. Repeated builds from the same tree and filesystem metadata can therefore match byte for byte. Source file mtimes, permissions, ownership and the exporter/runtime still affect the archive, so this does not guarantee identical output across different checkouts or systems.
+
 ## Core releases
 
 `build_release_package.py` creates a repeatable TAR.GZ from a staged core tree and writes an inventory and checksum list. `build_release_manifest.py` generates unsigned core metadata using the archive's SHA-256, the Extended version, the upstream release and exact baseline commit, and the intended HTTPS URL. See the [offline release workflow](../../cms/docs/extended/release-process.md#offline-prototype) for commands and key handling.

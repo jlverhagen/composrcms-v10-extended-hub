@@ -82,6 +82,14 @@ foreach (array('global3', 'zones', 'version', 'version2', 'addons', 'addons2', '
     require_code($module);
 }
 
+// The offline builder fixes generated metadata time so repeated builds of the
+// same source tree are stable. Do not silently use an older create_addon API.
+$export_parameters = (new ReflectionFunction('create_addon'))->getParameters();
+if (!isset($export_parameters[15]) || $export_parameters[15]->getName() !== 'metadata_mtime') {
+    fwrite(STDERR, "Core create_addon lacks generated metadata timestamp support.\n");
+    exit(2);
+}
+
 $registry = $source . '/sources_custom/hooks/systems/addon_registry/';
 $ids = $requested_ids;
 if ($ids === array()) {
@@ -126,7 +134,7 @@ foreach (array_unique($ids) as $id) {
             $filename, $files, $info['name'], implode(',', $info['incompatibilities']),
             implode(',', $info['dependencies']), $info['author'], $info['organisation'],
             $info['version'], $info['category'], implode("\n", $info['copyright_attribution']),
-            $info['licence'], $info['description'], $stage, null, $source
+            $info['licence'], $info['description'], $stage, null, $source, 0
         );
         $archive = $output . '/' . $stage . '/' . $filename;
         if (!chmod($archive, 0644) || !rename($archive, $output . '/' . $filename)) {
