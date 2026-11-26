@@ -17,6 +17,7 @@ import zlib
 
 from build_release_manifest import CALENDAR_VERSION_PATTERN
 from catalogue_enforcement import GUARDED_FILES, render_checksums
+from addon_maintenance_policy import is_excluded_spreadsheet_payload
 
 
 def php(code, *args, data=None):
@@ -115,6 +116,8 @@ def build(source, output, version):
         path = PurePosixPath(name)
         if not path.parts or path.is_absolute() or ".." in path.parts or "\\" in name or str(path) != name:
             raise ValueError(f"Invalid inventory path: {name}")
+        if is_excluded_spreadsheet_payload(name):
+            raise ValueError(f"Excluded spreadsheet addon payload: {name}")
         if path.parts[0] in {"aps", "mobiquo", ".git"} or name == "_config.php":
             continue
         member = source / ("data_custom/execute_temp.php.bundle" if name == "data_custom/execute_temp.php" else name)
@@ -191,3 +194,4 @@ if __name__ == "__main__":
     parser.add_argument("--version", required=True)
     args = parser.parse_args()
     build(args.source_dir.resolve(), args.output_dir.resolve(), args.version)
+

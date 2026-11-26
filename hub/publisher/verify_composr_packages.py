@@ -15,6 +15,7 @@ import zipfile
 import zlib
 
 from catalogue_enforcement import GUARDED_FILES, render_checksums
+from addon_maintenance_policy import is_excluded_spreadsheet_payload
 
 
 def validate_names(names):
@@ -26,7 +27,8 @@ def validate_names(names):
                 or str(path) != name or '\\' in name):
             raise ValueError(f'Unsafe archive member: {name}')
         if (path.parts[0] in {'tracker', 'aps', 'mobiquo', '.git'}
-                or name == '_config.php' or 'composr_homesite_support_credits' in name):
+                or name == '_config.php' or 'composr_homesite_support_credits' in name
+                or is_excluded_spreadsheet_payload(name)):
             raise ValueError(f'Excluded release member: {name}')
 
 
@@ -135,3 +137,4 @@ if __name__ == '__main__':
     parser.add_argument('--php', default='php')
     args = parser.parse_args()
     print(json.dumps(verify(args.package_dir, args.version, args.php), indent=2))
+

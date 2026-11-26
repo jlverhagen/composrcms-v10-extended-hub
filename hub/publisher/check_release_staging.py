@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import stat
+from addon_maintenance_policy import is_excluded_spreadsheet_payload
 
 PRIVATE_KEY_HEADER = re.compile(rb'^-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----\r?$', re.MULTILINE)
 PRIVATE_KEY_NAMES = {'id_rsa', 'id_dsa', 'id_ecdsa', 'id_ed25519'}
@@ -38,6 +39,8 @@ def check_staging(source):
         name = path.name.lower()
         findings = []
         entry = {'path': relative, 'findings': findings}
+        if is_excluded_spreadsheet_payload(relative):
+            findings.append('excluded spreadsheet addon payload')
         if path != source and '\\' in relative:
             findings.append('path contains a backslash')
         if '.git' in relative_path.parts:
@@ -79,3 +82,4 @@ def main():
 
 if __name__ == '__main__':
     raise SystemExit(main())
+

@@ -23,7 +23,7 @@ if ($argc < 3 || $source === false || !is_file($source . '/sources/addons2.php')
 const HHVM = false;
 const GOOGLE_APPENGINE = true;
 // Retained upstream source is not a maintained/publishable Extended addon.
-$excluded_addons = array('composr_homesite_support_credits');
+$excluded_addons = array('composr_homesite_support_credits', 'excel_support');
 $requested_ids = array_slice($argv, 3);
 foreach ($requested_ids as $id) {
     if (in_array($id, $excluded_addons, true)) {
@@ -154,3 +154,4 @@ foreach (array_unique($ids) as $id) {
     }
 }
 exit($failed ? 1 : 0);
+

@@ -9,6 +9,7 @@ import unittest
 PHP = os.environ.get('PHP_BINARY') or shutil.which('php')
 BUILDER = Path(__file__).resolve().parents[1] / 'publisher/build_addon_tars.php'
 EXCLUDED = 'composr_homesite_support_credits'
+EXCLUDED_SPREADSHEET = 'excel_support'
 
 
 @unittest.skipUnless(PHP, 'PHP CLI required')
@@ -42,7 +43,7 @@ function create_addon($filename, $files, $name, $incompat, $deps, $author, $org,
     file_put_contents(get_custom_file_base().'/'.$stage.'/'.$filename, 'fixture');
 }
 ''')
-        for name in ('fixture', EXCLUDED):
+        for name in ('fixture', EXCLUDED, EXCLUDED_SPREADSHEET):
             (registry / (name + '.php')).write_text('<?php\n')
         (self.source / 'payload.txt').write_text('fixture')
 
@@ -51,15 +52,19 @@ function create_addon($filename, $files, $name, $incompat, $deps, $author, $org,
             str(self.source), str(self.output), *ids], capture_output=True, text=True, timeout=20)
 
     def test_explicit_excluded_request_stops_before_source_execution(self):
-        result = self.run_builder(EXCLUDED)
-        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
-        self.assertIn('excluded by Extended maintenance policy', result.stderr)
-        self.assertEqual(list(self.output.iterdir()), [])
+        for addon in (EXCLUDED, EXCLUDED_SPREADSHEET):
+            with self.subTest(addon=addon):
+                result = self.run_builder(addon)
+                self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                self.assertIn('excluded by Extended maintenance policy', result.stderr)
+                self.assertEqual(list(self.output.iterdir()), [])
 
     def test_mixed_request_is_rejected_without_partial_build(self):
-        result = self.run_builder('fixture', EXCLUDED)
-        self.assertEqual(result.returncode, 2)
-        self.assertEqual(list(self.output.iterdir()), [])
+        for addon in (EXCLUDED, EXCLUDED_SPREADSHEET):
+            with self.subTest(addon=addon):
+                result = self.run_builder('fixture', addon)
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(list(self.output.iterdir()), [])
 
     def test_automatic_selection_skips_excluded_registry(self):
         result = self.run_builder()
@@ -68,6 +73,7 @@ function create_addon($filename, $files, $name, $incompat, $deps, $author, $org,
         self.assertEqual(result.stdout.strip(), 'fixture-10.x.tar')
         self.assertEqual((self.output / 'fixture-10.x.tar').read_text(), 'fixture')
         self.assertFalse(any(EXCLUDED in p.name for p in self.output.iterdir()))
+        self.assertFalse(any(EXCLUDED_SPREADSHEET in p.name for p in self.output.iterdir()))
 
     def test_explicit_maintained_addon_still_builds(self):
         result = self.run_builder('fixture')
@@ -87,3 +93,4 @@ function create_addon($filename, $files, $name, $incompat, $deps, $author, $org,
 
 if __name__ == '__main__':
     unittest.main()
+

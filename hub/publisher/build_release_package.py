@@ -12,6 +12,7 @@ import tempfile
 
 from build_release_manifest import DISTRIBUTION_ID, sha256_file, validate_version
 from check_release_staging import iter_staging_tree, staged_file_mode
+from addon_maintenance_policy import is_excluded_spreadsheet_payload
 
 
 class HashingReader:
@@ -71,6 +72,8 @@ def build_package(source, destination, version):
                 with tarfile.open(fileobj=compressed, mode='w', format=tarfile.PAX_FORMAT) as archive:
                     for path, path_stat in iter_staging_tree(source):
                         relative = path.relative_to(source).as_posix()
+                        if is_excluded_spreadsheet_payload(relative):
+                            raise ValueError(f'excluded spreadsheet addon payload: {relative}')
                         if '\\' in relative:
                             raise ValueError(f'unsupported path in source tree: {path}')
                         archive_path = prefix if path == source else f'{prefix}/{relative}'
@@ -113,3 +116,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
