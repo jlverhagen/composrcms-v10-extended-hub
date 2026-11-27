@@ -15,7 +15,7 @@ import zipfile
 import zlib
 
 from catalogue_enforcement import GUARDED_FILES, render_checksums
-from addon_maintenance_policy import is_excluded_spreadsheet_payload
+from addon_maintenance_policy import is_excluded_spreadsheet_payload, is_excluded_nested_csv_payload
 
 
 def validate_names(names):
@@ -28,7 +28,8 @@ def validate_names(names):
             raise ValueError(f'Unsafe archive member: {name}')
         if (path.parts[0] in {'tracker', 'aps', 'mobiquo', '.git'}
                 or name == '_config.php' or 'composr_homesite_support_credits' in name
-                or is_excluded_spreadsheet_payload(name)):
+                or is_excluded_spreadsheet_payload(name)
+                or is_excluded_nested_csv_payload(name)):
             raise ValueError(f'Excluded release member: {name}')
 
 

@@ -10,6 +10,7 @@ PHP = os.environ.get('PHP_BINARY') or shutil.which('php')
 BUILDER = Path(__file__).resolve().parents[1] / 'publisher/build_addon_tars.php'
 EXCLUDED = 'composr_homesite_support_credits'
 EXCLUDED_SPREADSHEET = 'excel_support'
+EXCLUDED_NESTED_CSV = 'nested_cpf_csv_lists'
 
 
 @unittest.skipUnless(PHP, 'PHP CLI required')
@@ -43,7 +44,7 @@ function create_addon($filename, $files, $name, $incompat, $deps, $author, $org,
     file_put_contents(get_custom_file_base().'/'.$stage.'/'.$filename, 'fixture');
 }
 ''')
-        for name in ('fixture', EXCLUDED, EXCLUDED_SPREADSHEET):
+        for name in ('fixture', EXCLUDED, EXCLUDED_SPREADSHEET, EXCLUDED_NESTED_CSV):
             (registry / (name + '.php')).write_text('<?php\n')
         (self.source / 'payload.txt').write_text('fixture')
 
@@ -52,7 +53,7 @@ function create_addon($filename, $files, $name, $incompat, $deps, $author, $org,
             str(self.source), str(self.output), *ids], capture_output=True, text=True, timeout=20)
 
     def test_explicit_excluded_request_stops_before_source_execution(self):
-        for addon in (EXCLUDED, EXCLUDED_SPREADSHEET):
+        for addon in (EXCLUDED, EXCLUDED_SPREADSHEET, EXCLUDED_NESTED_CSV):
             with self.subTest(addon=addon):
                 result = self.run_builder(addon)
                 self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
@@ -60,7 +61,7 @@ function create_addon($filename, $files, $name, $incompat, $deps, $author, $org,
                 self.assertEqual(list(self.output.iterdir()), [])
 
     def test_mixed_request_is_rejected_without_partial_build(self):
-        for addon in (EXCLUDED, EXCLUDED_SPREADSHEET):
+        for addon in (EXCLUDED, EXCLUDED_SPREADSHEET, EXCLUDED_NESTED_CSV):
             with self.subTest(addon=addon):
                 result = self.run_builder('fixture', addon)
                 self.assertEqual(result.returncode, 2)
@@ -74,6 +75,7 @@ function create_addon($filename, $files, $name, $incompat, $deps, $author, $org,
         self.assertEqual((self.output / 'fixture-10.x.tar').read_text(), 'fixture')
         self.assertFalse(any(EXCLUDED in p.name for p in self.output.iterdir()))
         self.assertFalse(any(EXCLUDED_SPREADSHEET in p.name for p in self.output.iterdir()))
+        self.assertFalse(any(EXCLUDED_NESTED_CSV in p.name for p in self.output.iterdir()))
 
     def test_explicit_maintained_addon_still_builds(self):
         result = self.run_builder('fixture')
